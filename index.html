@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Scheduler</title>
+    <style>
+        /* Keyframes for blinking effect */
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+        /* Blinking text style */
+        .blinking {
+            font-size: 24px;
+            color: navy; /* Navy blue for blinking text */
+            animation: blinker 1s linear infinite; /* Blink every 1 second */
+            text-align: center;
+            margin-top: 20%;
+        }
+    </style>
+</head>
+<body>
+    <div id="shift-display" class="blinking">Loading...</div>
+
+    <script>
+        // Static schedule for shifts
+        const shifts = [
+            { name: "Natali", days: ["Wednesday", "Thursday", "Friday", "Saturday"], start: "10:00", end: "20:00" },
+            { name: "Zy", days: ["Sunday", "Monday", "Tuesday", "Saturday"], start: "12:00", end: "22:00" },
+            { name: "Noah", days: ["Sunday", "Thursday", "Friday", "Saturday"], start: "07:00", end: "17:00" },
+            { name: "Toni", days: ["Sunday", "Monday", "Tuesday", "Saturday"], start: "09:00", end: "19:00" },
+            { name: "Donna", days: ["Sunday", "Monday", "Tuesday", "Wednesday"], start: "21:00", end: "07:00" },
+            { name: "Vinz", days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], start: "07:00", end: "17:00" },
+            { name: "Cent", days: ["Tuesday", "Wednesday", "Thursday", "Friday"], start: "15:00", end: "01:00" },
+            { name: "Marj", days: ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], start: "11:00", end: "20:00" },
+            { name: "Charlene", days: ["Wednesday", "Thursday", "Friday", "Saturday"], start: "21:00", end: "07:00" }
+        ];
+
+        // Function to get Atlanta time
+        function getAtlantaTime() {
+            const now = new Date();
+            const atlantaFormatter = new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/New_York",
+                weekday: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false // 24-hour format
+            });
+
+            const atlantaDate = atlantaFormatter.formatToParts(now);
+            const atlantaDay = atlantaDate.find(part => part.type === "weekday").value;
+            const atlantaHour = atlantaDate.find(part => part.type === "hour").value.padStart(2, '0');
+            const atlantaMinute = atlantaDate.find(part => part.type === "minute").value.padStart(2, '0');
+            const atlantaTime = `${atlantaHour}:${atlantaMinute}`;
+
+            return { day: atlantaDay, time: atlantaTime };
+        }
+
+        // Function to get all people on shift
+        function getCurrentShifts() {
+            const atlantaNow = getAtlantaTime();
+            const currentDay = atlantaNow.day;
+            const currentTime = atlantaNow.time;
+
+            // Find all shifts that overlap with the current time
+            const currentShifts = shifts.filter(shift => {
+                // Handle overnight shifts (end time < start time, e.g., 21:00-07:00)
+                if (shift.start > shift.end) {
+                    return (
+                        shift.days.includes(currentDay) &&
+                        (currentTime >= shift.start || currentTime < shift.end)
+                    );
+                }
+                return (
+                    shift.days.includes(currentDay) &&
+                    currentTime >= shift.start &&
+                    currentTime < shift.end
+                );
+            });
+
+            const shiftDisplay = document.getElementById("shift-display");
+
+            if (currentShifts.length > 0) {
+                // Create a single blinking message with all names and the phrase
+                const names = currentShifts.map(shift => shift.name).join(", ");
+                shiftDisplay.innerHTML = `${names} are on shift!`;
+                shiftDisplay.classList.add("blinking"); // Ensure blinking is applied to the entire message
+            } else {
+                shiftDisplay.innerText = `No one is currently on shift.`;
+                shiftDisplay.classList.remove("blinking"); // Remove blinking if no one is on shift
+            }
+        }
+
+        // Run the function and update every minute
+        getCurrentShifts();
+        setInterval(getCurrentShifts, 60000);
+    </script>
+</body>
+</html>
